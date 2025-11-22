@@ -1,0 +1,48 @@
+name: Deploy React App to GitHub Pages
+
+# Controls when the workflow should run
+on:
+  # Triggers the workflow on push events to the main branch
+  push:
+    branches: [ main ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This job handles the building and deployment of the application
+  build-and-deploy:
+    # Runs on the latest version of Ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checks out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Node.js environment
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Use a stable Node version
+
+      # Step 3: Install dependencies
+      - name: Install Dependencies
+        run: npm install
+
+      # Step 4: Build the production application
+      # Ensure your package.json has a 'build' script (e.g., 'react-scripts build' or 'vite build')
+      - name: Build Application
+        run: npm run build
+
+      # Step 5: Deploy the built files to the 'gh-pages' branch
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # IMPORTANT: Check your build tool. CRA uses 'build', Vite uses 'dist'.
+          # You might need to change this line based on your project setup.
+          publish_dir: ./dist
+          # Set the target branch for GitHub Pages hosting
+          publish_branch: gh-pages
