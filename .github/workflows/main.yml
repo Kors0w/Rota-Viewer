@@ -9,12 +9,22 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+# **CRITICAL FIX:** Grant necessary permissions for the GITHUB_TOKEN to push to the repository
+permissions:
+  contents: write # Needed for checkout and potentially building
+  pages: write    # Needed for deploying to GitHub Pages
+  id-token: write # Needed for environments/OIDC, good practice to include
+
 jobs:
   # This job handles the building and deployment of the application
   build-and-deploy:
     # Runs on the latest version of Ubuntu
     runs-on: ubuntu-latest
+    
+    # Optionally, you can set the environment if you are using Environments feature
+    # environment:
+    #   name: github-pages
+    #   url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       # Step 1: Checks out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -26,23 +36,31 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20' # Use a stable Node version
+          cache: 'npm'       # Caches node modules for faster builds
 
       # Step 3: Install dependencies
       - name: Install Dependencies
         run: npm install
 
       # Step 4: Build the production application
-      # Ensure your package.json has a 'build' script (e.g., 'react-scripts build' or 'vite build')
+      # Ensure your package.json has a 'build' script
       - name: Build Application
         run: npm run build
 
       # Step 5: Deploy the built files to the 'gh-pages' branch
+      # This step uses the granted permissions to push the artifacts.
       - name: Deploy to GitHub Pages
+        id: deployment
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          # IMPORTANT: Check your build tool. CRA uses 'build', Vite uses 'dist'.
-          # You might need to change this line based on your project setup.
-          publish_dir: ./dist
+          # Using the standard token is fine now that permissions are set above
+          github_token: ${{ secrets.GITHUB_TOKEN }} 
+          
+          # IMPORTANT CHECK: 
+          # - If using Create React App (CRA): publish_dir: ./build
+          # - If using Vite (Default): publish_dir: ./dist
+          # Based on your previous file, I will keep ./dist, but check your project setup!
+          publish_dir: ./dist 
+          
           # Set the target branch for GitHub Pages hosting
           publish_branch: gh-pages
